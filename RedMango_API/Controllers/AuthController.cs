@@ -23,6 +23,8 @@ namespace RedMango_API.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private string secretKey;
+        private static string checkRole = "";
+       
         public AuthController(ApplicationDbContext db, IConfiguration configuration,
             UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
@@ -52,6 +54,8 @@ namespace RedMango_API.Controllers
 
             //we have to generate JWT Token
             var roles = await _userManager.GetRolesAsync(userFromDb);
+
+            checkRole = roles.FirstOrDefault();
             JwtSecurityTokenHandler tokenHandler = new();
             byte[] key = Encoding.ASCII.GetBytes(secretKey);
 
@@ -124,14 +128,21 @@ namespace RedMango_API.Controllers
                         await _roleManager.CreateAsync(new IdentityRole(SD.Role_Admin));
                         await _roleManager.CreateAsync(new IdentityRole(SD.Role_Customer));
                     }
-                    if (model.Role.ToLower() == SD.Role_Admin)
-                    {
-                        await _userManager.AddToRoleAsync(newUser, SD.Role_Admin);
-                    }
-                    else
-                    {
-                        await _userManager.AddToRoleAsync(newUser, SD.Role_Customer);
-                    }
+                    //if (model.Role.ToLower() == SD.Role_Admin)
+                    //{
+                    //    await _userManager.AddToRoleAsync(newUser, SD.Role_Admin);
+                    //}
+                    //else
+                    //{
+                    //    await _userManager.AddToRoleAsync(newUser, SD.Role_Customer);
+                    //}
+                    // Lấy thông tin người dùng hiện tại
+                    var roleToAdd = checkRole?.ToLower() == SD.Role_Admin
+                     ? model.Role.ToLower() == SD.Role_Admin ? SD.Role_Admin : SD.Role_Customer
+                     : SD.Role_Customer;
+
+                    await _userManager.AddToRoleAsync(newUser, roleToAdd);
+
 
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = true;
